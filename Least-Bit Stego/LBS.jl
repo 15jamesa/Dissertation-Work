@@ -1,4 +1,4 @@
-using ImageIO, FileIO, ColorTypes, ImageView, Pkg, Images
+using ImageIO, FileIO, ColorTypes, ImageView, Images
 
 function encode(input_image, secret_message, output_image)
     img = load(input_image)
@@ -14,12 +14,11 @@ function encode(input_image, secret_message, output_image)
 
     #change last bit
     for i in 1:length(message_bin)
-        last = mod(b[i],2)
+        #clear bit
+        b[i] = b[i] & 0b11111110
+        #set bit
+        b[i] = b[i] ⊻ message_bin[i]
 
-        if last ≠ message_bin[i]
-            b[i]  = b[i] ⊻ 1
-        end
-        
     end
 
     #add blue channel back 
@@ -42,11 +41,7 @@ function decode(image)
 
     #extract data
     b = UInt8.(reinterpret.(blue.(img)))
-
-    extracted = zeros(Int8, length(b))
-    for i in 1:length(b)
-        extracted[i] = mod(b[i],2)
-    end
+    extracted = [mod(x,2) for x in b]
 
     #make sense of extracted data
     characters = join(Char.(parse.(Int, (join.(collect(Iterators.partition(extracted, 8)))); base=2)))
@@ -54,5 +49,5 @@ function decode(image)
 
 end
 
-encode("dice.png", "this is my super secret message", "secret_dice.png")
-decode("secret_dice.png")
+encode("banana.png", "this is my super secret message", "secret_banana.png")
+decode("secret_banana.png")
