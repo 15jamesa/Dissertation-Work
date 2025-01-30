@@ -49,5 +49,5 @@ function decode(image)
 
 end
 
-encode("banana.png", "this is my super secret message", "secret_banana.png")
-decode("secret_banana.png")
+encode("dice.png", "this is my super secret message", "secret_dice.png")
+decode("secret_dice.png")
