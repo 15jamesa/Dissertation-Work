@@ -67,7 +67,14 @@ end
 
 function extract(h_hat,y)
     H = expand_h_hat(h_hat,y)
-    show(stdout, "text/plain", H)
+    message = zeros(Int64, 0)
+    for row in eachrow(H)
+        combined = row .& y
+        ones = count(i->(i==1), combined)
+        message_bit = mod(ones,2)==0 ? 0 : 1
+        append!(message, message_bit)
+    end
+    println(message)
 end
 
 #setting up test data
