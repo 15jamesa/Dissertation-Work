@@ -1,5 +1,12 @@
 using SparseArrays
 
+#generate h_hat to be shared with sender and receiver
+function generate_h_hat(h,w)
+    h_hat = rand([0,1],(h,w))
+    return h_hat
+end
+
+#finds the y most similar to x that satisfies Hy = m
 function embed(h_hat, x, m, rho)
     #reads columns upwards
     #forward step of viterbi
@@ -51,6 +58,7 @@ function embed(h_hat, x, m, rho)
     return(embedding_cost, y)
 end
 
+#create the sparse matrix
 function expand_h_hat(h_hat, y)
     h,w = size(h_hat)
     H = spzeros(Int64, div(size(y)[1],2), size(y)[1])
@@ -65,6 +73,7 @@ function expand_h_hat(h_hat, y)
     return H
 end
 
+#bitwise matrix multiplication
 function extract(h_hat,y)
     H = expand_h_hat(h_hat,y)
     message = zeros(Int64, 0)
@@ -74,17 +83,16 @@ function extract(h_hat,y)
         message_bit = mod(ones,2)==0 ? 0 : 1
         append!(message, message_bit)
     end
-    println(message)
+    return(message)
 end
 
 #setting up test data
-cover = [1,0,1,1,0,0,0,1]
-message = [0,1,1,1]
-h_hat = [1 0;
-         1 1]
+cover = [1,0,1,1,0,0,0,1,0,1,1,1,0,0,1,0]
+message = [0,1,1,1,1,1,1,1]
+h_hat = generate_h_hat(2,2)
 rho = ones(Int, size(cover))
 
 embedding_cost, y = embed(h_hat, cover, message, rho)
 
-extract(h_hat,y)
+println(extract(h_hat,y))
 
