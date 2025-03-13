@@ -8,21 +8,23 @@ end
 
 #finds the y most similar to x that satisfies Hy = m
 function embed(h_hat, x, m, rho)
+    #change matrix to vector implementation
     #reads columns upwards
     #forward step of viterbi
     h,w = size(h_hat)
-    block_num = div(size(cover)[1], 2)
-    path = zeros(Int64, size(cover)[1], h^2)
-    y = zeros(Int64, size(cover)[1])
+    n = length(x)
+    block_num = div(n, w)
+    path = zeros(Bool, n, h^2)
+    y = zeros(Int64, n)
 
-    weight = [Inf for n in 1:2^h]
+    weight = [Inf32 for n in 1:2^h]
     weight[1] = 0
     indx = 1
     indm = 1
     limit = block_num - (h-1)
     for i in 1:block_num
         for j in 1:w
-            new_weight = zeros(size(weight))
+            new_weight = zero(weight)
             for k in 1:(2^h)
                 w0 = weight[k] + x[indx]*rho[indx]
                 column = i > limit ? reverse(h_hat[1:end-(i-limit),j]) : reverse(h_hat[:,j])
@@ -37,37 +39,38 @@ function embed(h_hat, x, m, rho)
         for j in 0:2^(h-1)-1
             weight[j+1] = weight[2*j + m[indm] + 1]
         end
-        [weight[n+1] = Inf for n in 2^(h-1):2^h-1]
+        for n in 2^(h-1):2^h-1; weight[n+1] = Inf; end
         indm += 1
     end
     #backward step of viterbi
     embedding_cost = weight[1]
     state = 0
-    indx += -1
-    indm += -1
+    indx -= 1
+    indm -= 1
     for i in block_num:-1:1
         state = 2*state + m[indm]
         for j in w:-1:1
             y[indx] = path[indx, (state+1)]
             column = i > limit ? reverse(h_hat[1:end-(i-limit),j]) : reverse(h_hat[:,j])
             state = state ⊻ (y[indx]*parse(Int, join(column), base=2))
-            indx += -1
+            indx -= 1
         end
-        indm += -1
+        indm -= 1
     end
-    return(embedding_cost, y)
+    return (embedding_cost, y)
 end
 
 #create the sparse matrix
 function expand_h_hat(h_hat, y)
     h,w = size(h_hat)
-    H = spzeros(Int64, div(size(y)[1],2), size(y)[1])
-    limit = (div(size(y)[1],2))- (h-1)
+    block_num = div(size(y)[1],w)
+    H = spzeros(Int64, block_num, size(y)[1])
+    limit = (block_num)-(h-1)
     for i in 1:(size(y)[1])
-        o = ceil(Int, i/2)
+        o = ceil(Int, i/w)
         j = mod(i-1,w) +1
-        column = i/2 > limit ? h_hat[1:end-((ceil(Int,i/2))-limit),j] : h_hat[:,j]
-        cutoff = i/2 > limit ? o+h-1-((ceil(Int,i/2)-limit)) : o+h-1
+        column = i/w > limit ? h_hat[1:end-(o-limit),j] : h_hat[:,j]
+        cutoff = i/w > limit ? h-(1-limit) : o+h-1
         H[o:cutoff,i] = column
     end
     return H
@@ -87,12 +90,15 @@ function extract(h_hat,y)
 end
 
 #setting up test data
-cover = [1,0,1,1,0,0,0,1,0,1,1,1,0,0,1,0]
-message = [0,1,1,1,1,1,1,1]
-h_hat = generate_h_hat(2,2)
+cover = [1,0,0,1,1,0,1,0,1,0,0,1,0,1,0]
+message = [0,0,1,0,1]
+h_hat = [1 0 0;
+         1 1 1;
+         1 1 0]
 rho = ones(Int, size(cover))
 
 embedding_cost, y = embed(h_hat, cover, message, rho)
 
+println(y)
 println(extract(h_hat,y))
 
