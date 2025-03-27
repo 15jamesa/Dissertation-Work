@@ -93,13 +93,45 @@ function extract(h_hat,y)
     return(message)
 end
 
+#get kth bit
+function get_kth_bit(k, n)
+    mask = 1 << k
+    bit = (n & mask) >> k
+    return bit
+end
+
+#memory saving matrix multiplication
+function matrix_mult(h_hat, y)
+    w = length(h_hat)
+    h = ndigits(maximum(h_hat), base=2)
+    block_num = div(size(y)[1],w)
+    message = zeros(Int64, block_num)
+    row_length = h*w
+    row = [get_kth_bit(h-div(i-1,w)-1, h_hat[mod(i-1,w)+1]) for i in 1:row_length]
+    for i in 1:h
+        cropped_row = row[end-(i*w)+1:end]
+        combined = cropped_row .& y[1:length(cropped_row)]
+        ones = sum(combined)
+        message_bit = mod(ones,2)
+        message[i] = message_bit
+    end
+    for i in h+1:block_num
+        mult_offset = (i-h)*w +1
+        combined = row .& y[mult_offset:mult_offset+row_length-1]
+        ones = sum(combined)
+        message_bit = mod(ones,2)
+        message[i] = message_bit
+    end
+    return(message)
+end
+
 #setting up test data
-cover = [0,0,1,1,0,1,0,1,1,1,0,1,1,0,1]
-message = [1,0,0,1,1]
-h_hat = [1,7,6]
+cover = [1,1,0,1,1,0,1,1,1,1]
+message = [1,1,1,1,1]
+h_hat = [5,7]
 rho = ones(Int, size(cover))
 
 embedding_cost, y = embed(h_hat, cover, message, rho)
 
 println(y)
-println(extract(h_hat,y))
+println(matrix_mult(h_hat,y))
