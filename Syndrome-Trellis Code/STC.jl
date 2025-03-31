@@ -1,3 +1,5 @@
+module STC
+
 using SparseArrays
 
 #generate h_hat to be shared with sender and receiver
@@ -61,7 +63,7 @@ function embed(h_hat, x, m, rho)
 end
 
 
-#create the sparse matrix
+#=create the sparse matrix
 function expand_h_hat(h_hat, y)
     w = length(h_hat)
     h = ndigits(maximum(h_hat), base=2)
@@ -92,6 +94,7 @@ function extract(h_hat,y)
     end
     return(message)
 end
+=#
 
 #get kth bit
 function get_kth_bit(k, n)
@@ -125,13 +128,4 @@ function matrix_mult(h_hat, y)
     return(message)
 end
 
-#setting up test data
-cover = [1,1,0,1,1,0,1,1,1,1]
-message = [1,1,1,1,1]
-h_hat = [5,7]
-rho = ones(Int, size(cover))
-
-embedding_cost, y = embed(h_hat, cover, message, rho)
-
-println(y)
-println(matrix_mult(h_hat,y))
+end 
