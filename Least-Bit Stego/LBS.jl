@@ -1,3 +1,5 @@
+module LBS
+
 using ImageIO, FileIO, ColorTypes, ImageView, Images
 
 function encode(input_image, secret_message, output_image)
@@ -45,9 +47,9 @@ function decode(image)
 
     #make sense of extracted data
     characters = join(Char.(parse.(Int, (join.(collect(Iterators.partition(extracted, 8)))); base=2)))
-    print(characters)
+    return characters
 
 end
 
-encode("dice.png", "this is my super secret message", "secret_dice.png")
-decode("secret_dice.png")
+end
+
