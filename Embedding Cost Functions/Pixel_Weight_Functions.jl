@@ -34,15 +34,22 @@ end
 function fourier_lowpass_filtering(image_path)
     img = load(image_path)
     greyscale = Float64.(Gray.(img))
-    transformed = fft(greyscale)
+    transformed = fftshift(fft(greyscale))
 
-    #Struggling with filter parameters
-    response = Lowpass(0.5)
-    design = FIRWindow(hanning(64))
-    filtered = zeros(Complex{Float64},size(transformed))
-    filt!(filtered, digitalfilter(response, design; fs=1), transformed)
+    cutoff = real(mean(transformed, dims=(1,2))[1])
+    rows, cols = size(transformed)
+    cy = div(rows,2)
+    cx = div(cols,2)
 
-    retransformed = real.(ifft(filtered))
+    x = [j - cx for j in 1:cols] 
+    y = [i - cy for i in 1:rows]
+    radius_matrix = [sqrt(yi^2 + xj^2) for yi in y, xj in x]
+    max_radius = maximum(radius_matrix)
+    cutoff_ratio = cutoff * max_radius
+    zeroing_mask = radius_matrix .<= cutoff_ratio
+    filtered = transformed .* zeroing_mask
+
+    retransformed = real.(ifft(ifftshift(filtered)))
     noise = abs.(greyscale - retransformed)
 
     return noise
@@ -54,7 +61,8 @@ function fourier_highpass_filtering(image_path)
     transformed = fft(greyscale)
 
     #Struggling with filter parameters
-    response = Highpass(0.4)
+    x = real(mean(transformed, dims=(1,2))[1])
+    response = Highpass(x)
     design = FIRWindow(hanning(64))
     filt(digitalfilter(response, design; fs=1), transformed)
 
@@ -62,5 +70,7 @@ function fourier_highpass_filtering(image_path)
 
     return retransformed
 end
+
+fourier_lowpass_filtering("sunflower.png")
 
 end
