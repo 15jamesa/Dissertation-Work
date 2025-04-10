@@ -56,12 +56,10 @@ function fourier_highpass_filtering(image_path)
     #Struggling with filter parameters
     response = Highpass(0.4)
     design = FIRWindow(hanning(64))
-    filtered = zeros(Complex{Float64},size(transformed))
-    filt!(filtered, digitalfilter(response, design; fs=1), transformed)
+    filt(digitalfilter(response, design; fs=1), transformed)
 
-    retransformed = real.(ifft(filtered))
+    retransformed = real.(ifft(transformed))
 
-    save("output.png", floor.(retransformed))
     return retransformed
 end
 
