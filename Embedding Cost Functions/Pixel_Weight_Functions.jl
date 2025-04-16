@@ -48,7 +48,6 @@ function fourier_hard_cutoff_filtering(img)
     retransformed = real.(ifft(ifftshift(filtered)))
     unpadded = remove_padding(retransformed)
     noise = abs.(greyscale - unpadded)
-    save("noise.png", noise)
 
     return noise
 end
@@ -76,7 +75,6 @@ function fourier_soft_cutoff_filtering(img)
     unpadded = remove_padding(retransformed)
     noise = abs.(greyscale - unpadded)
 
-    save("noise.png", noise)
     return noise
 end
 
@@ -92,8 +90,5 @@ function remove_padding(img)
     return unpadded_image
 
 end
-
-img = load("sunflower.png")
-fourier_soft_cutoff_filtering(img)
 
 end
