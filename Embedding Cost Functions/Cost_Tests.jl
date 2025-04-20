@@ -2,19 +2,46 @@ include("Pixel_Weight_Functions.jl")
 using .PixelWeights
 using Test
 using Images
+using Statistics
 
-@testset "blurred_sunflower" begin
-    y = load("sunflower.png")
-    x = PixelWeights.blurred_noise_calculation(y)
-   @test x[400,600] > x[1,1]
-   @test x[400,600] > x[end,end]
+@testset "blurred" begin
+    x = load("sunflower.png")
+    y = PixelWeights.blurred_noise_calculation(x)
+    @test mean(y[1:10, 1:10], dims=(1,2))[1] < mean(y[600:610, 400:410], dims=(1,2))[1]
+
+    @test minimum(y) >= 0
 end
 
-@testset "sensitive_sunflower" begin
-    y = load("sunflower.png")
-    x = PixelWeights.colour_sensitivity(y)
-   @test x[400,600] > x[1,1]
-   @test x[400,600] > x[end,end]
+@testset "sensitivity" begin
+    x = load("sunflower.png")
+    y = PixelWeights.colour_sensitivity(x)
+    @test mean(y[1:10, 1:10], dims=(1,2))[1] < mean(y[600:610, 400:410], dims=(1,2))[1]
+
+    @test minimum(y) >= 0
+end
+
+@testset "canny" begin
+    x = load("sunflower.png")
+    y = PixelWeights.canny_edge_detection(x)
+    @test mean(y[1:10, 1:10], dims=(1,2))[1] < mean(y[600:610, 400:410], dims=(1,2))[1]
+
+    @test minimum(y) >= 0
+end
+
+@testset "hard-cutoff" begin
+    x = load("sunflower.png")
+    y = PixelWeights.fourier_hard_cutoff_filtering(x)
+    @test mean(y[1:10, 1:10], dims=(1,2))[1] < mean(y[600:610, 400:410], dims=(1,2))[1]
+
+    @test minimum(y) >= 0
+end
+
+@testset "soft-cutoff" begin
+    x = load("sunflower.png")
+    y = PixelWeights.fourier_soft_cutoff_filtering(x)
+    @test mean(y[1:10, 1:10], dims=(1,2))[1] < mean(y[600:610, 400:410], dims=(1,2))[1]
+
+    @test minimum(y) >= 0
 end
 
 @testset "pad" begin

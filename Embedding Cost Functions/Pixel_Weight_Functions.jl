@@ -16,6 +16,9 @@ function colour_sensitivity(rgb)
     g = Float64.(green.(rgb))
     b = Float64.(blue.(rgb))
     sensitivity = g - b
+
+    additive = abs(minimum(sensitivity))
+    sensitivity = sensitivity .+ additive
     
     return sensitivity
 end
@@ -25,6 +28,20 @@ function canny_edge_detection(img)
     weighted = Float64.(Gray.(edges))
 
     return weighted
+end
+
+function add_padding(img)
+    height, width = Int.(ceil.(size(img) ./ 2))
+    padded_img = padarray(img, Pad(:symmetric,height,width))
+    
+    return padded_img
+end
+
+function remove_padding(img)
+    img_height, img_width = Int.(floor.(size(img) ./ 2))
+    unpadded_image = img[1:img_height,1:img_width]
+
+    return unpadded_image
 end
 
 function fourier_hard_cutoff_filtering(img)
@@ -78,17 +95,11 @@ function fourier_soft_cutoff_filtering(img)
     return noise
 end
 
-function add_padding(img)
-    height, width = Int.(ceil.(size(img) ./ 2))
-    padded_img = padarray(img, Pad(:symmetric,height,width))
-    return padded_img
-end
+function noise_to_costs(noise)
+    max = maximum(noise)
+    costs = max .- noise
 
-function remove_padding(img)
-    img_height, img_width = Int.(floor.(size(img) ./ 2))
-    unpadded_image = img[1:img_height,1:img_width]
-    return unpadded_image
-
+    return costs
 end
 
 end
