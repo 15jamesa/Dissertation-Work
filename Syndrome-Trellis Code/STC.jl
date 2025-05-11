@@ -1,10 +1,19 @@
 module STC
 
-using SparseArrays
+include("../Embedding Cost Functions/Pixel_Weight_Functions.jl")
+using .PixelWeights
+using Images
 
 #generate h_hat to be shared with sender and receiver
 function generate_h_hat(h,w)
-    h_hat = rand([0,1],(h,w))
+    hat = rand([0,1],(h,w))
+    hat[1,:] .= 1
+    hat[h,:] .= 1
+    if length(unique(eachcol(hat))) < w
+        hat = generate_h_hat(h,w)
+        return hat
+    end
+    h_hat = [parse(Int, string(i...); base=2) for i in eachcol(hat)]
     return h_hat
 end
 
@@ -16,8 +25,8 @@ function embed(h_hat, x, m, rho)
     h = ndigits(maximum(h_hat), base=2)
     n = length(x)
     block_num = div(n, w)
-    path = zeros(Bool, n, h^2)
-    y = zeros(Int64, n)
+    path = zeros(Bool, n, 2^h)
+    y = zeros(Int8, n)
 
     weight = [Inf32 for n in 1:2^h]
     weight[1] = 0
@@ -126,6 +135,51 @@ function matrix_mult(h_hat, y)
         message[i] = message_bit
     end
     return(message)
+end
+
+function message_to_bin(message)
+    message_bin = parse.(Int, collect(join(bitstring.(Int8.(collect(message))))))
+    return message_bin
+end
+
+function bin_to_message(binary)
+    characters = join(Char.(parse.(Int, (join.(collect(Iterators.partition(binary, 8)))); base=2)))
+    return characters
+end
+
+function png_embed(image, message, noise_func)
+    m = message_to_bin(message)
+    width = size(image)[1]
+    height = size(image)[2]
+
+    rho = PixelWeights.pixel_noise_to_bit_cost(getfield(PixelWeights, Symbol(noise_func))(image))[1:length(m)*4]
+
+    image = reduce(vcat, image)
+    x = UInt8.(reinterpret.(blue.(image)))
+    bitwise_x = reduce(vcat, reverse.(digits.(x, base=2, pad=8)))[1:length(m)*4]
+
+    h_hat = generate_h_hat(7,4)
+
+    new_blue_channel = embed(h_hat, bitwise_x, m, rho)[2]
+    b = parse.(UInt8, (join.(collect(Iterators.partition(new_blue_channel, 8)))); base=2)
+
+    for j in eachindex(b)
+        pixel = image[j]
+        image[j] = RGBA(red(pixel), green(pixel), reinterpret(N0f8,b[j]), alpha(pixel))
+    end
+    
+    image = reshape(image, (width, height))
+    return (h_hat,image)
+end
+
+function png_extract(image, h_hat)
+    image = reduce(vcat, image)
+    bin = UInt8.(reinterpret.(blue.(image)))
+    bitwise_bin = reduce(vcat, reverse.(digits.(bin, base=2, pad=8)))
+    extraction = matrix_mult(h_hat, bitwise_bin)
+    message = bin_to_message(extraction)
+
+    return message
 end
 
 end 
